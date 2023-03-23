@@ -249,7 +249,7 @@ def perform_training():
         # Algorithm 1: Training
         train_one_epoch(model, sd, dataloader, optimizer, scaler, loss_fn, epoch=epoch)
 
-        if epoch % 2 == 0:
+        if epoch % 20 == 0:
             save_path = os.path.join(log_dir, f"{epoch}{ext}")
 
             # Algorithm 2: Sampling
