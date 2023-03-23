@@ -23,3 +23,11 @@ class TrainingConfig:
     BATCH_SIZE = 32
     LR = 2e-4
     NUM_WORKERS = 2
+
+@dataclass
+class ModelConfig:
+    BASE_CH = 64  # 64, 128, 256, 256
+    BASE_CH_MULT = (1, 2, 4, 4) # 32, 16, 8, 8 
+    APPLY_ATTENTION = (False, True, True, False)
+    DROPOUT_RATE = 0.1
+    TIME_EMB_MULT = 4 # 128
