@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 import cv2
 from PIL import Image
-from config import *
 import matplotlib.pyplot as plt
 import base64
 
