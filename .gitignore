@@ -1,4 +1,5 @@
 .vscode
 **datasets**
 **models**
+**logdir**
 **__pycache__**
