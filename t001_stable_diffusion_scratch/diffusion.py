@@ -6,6 +6,7 @@ from models import UNet
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import gc
+from datetime import datetime
 
 
 class SimpleDiffusion:
@@ -197,7 +198,8 @@ def reverse_diffusion(
     if kwargs.get(
         "generate_video", False
     ):  # Generate and save video of the entire reverse process.
-        frames2vid(outs, kwargs["save_path"])
+        # frames2vid(outs, kwargs["save_path"])
+        Image.fromarray(outs[-1][:, :, ::-1]).save(kwargs["save_path"].split(".")[0] + ".png")
         # display(Image.fromarray(outs[-1][:, :, ::-1])) # Display the image at the final timestep of the reverse process.
         return None
 
@@ -284,6 +286,7 @@ def perform_inference():
         dropout_rate            = ModelConfig.DROPOUT_RATE,
         time_multiple           = ModelConfig.TIME_EMB_MULT,
     )
+    checkpoint_dir = "logdir/checkpoints/version_0"
     model.load_state_dict(torch.load(os.path.join(checkpoint_dir, "ckpt.tar"), map_location='cpu')['model'])
 
     model.to(BaseConfig.DEVICE)
@@ -308,6 +311,7 @@ def perform_inference():
         model,
         sd,
         num_images=256,
+        # num_images=64,
         generate_video=generate_video,
         save_path=save_path,
         timesteps=1000,
@@ -322,5 +326,5 @@ def perform_inference():
 
 if __name__ == "__main__":
     # perform_forward_diffusion()
-    perform_training()
-    # perform_inference()
+    # perform_training()
+    perform_inference()
