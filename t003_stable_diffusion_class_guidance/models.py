@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_channel, out_channel, mid_channel, residual):
+    def __init__(self, in_channel, out_channel, mid_channel=None, residual=False):
         super().__init__()
         self.residual = residual
         if not mid_channel:
@@ -30,7 +30,7 @@ class Down(nn.Module):
         self.max_pool = nn.Sequential(
             nn.MaxPool2d(2),
             DoubleConv(in_channels, in_channels, residual=True),
-            DoubleConv(out_channels, out_channels),
+            DoubleConv(in_channels, out_channels),
         )
 
         self.emb_layer = nn.Sequential(
@@ -121,7 +121,7 @@ class UNet(nn.Module):
         return pos_enc_c
     
     def forward(self, x: torch.Tensor, t: torch.Tensor):
-        t = t.unsqueeze(-1).type(torch.float)
+        t = t.unsqueeze(-1).type(torch.float).to(self.device)
         t = self.pos_encoding(t, self.time_dim)
 
         x1 = self.inc(x)
@@ -147,3 +147,12 @@ class UNet(nn.Module):
     
 
 
+if __name__ == '__main__':
+    net = UNet(device="cpu")
+    # net = UNet_conditional(num_classes=10, device="cpu")
+    print(sum([p.numel() for p in net.parameters()]))
+    x = torch.randn(3, 3, 64, 64)
+    t = x.new_tensor([500] * x.shape[0]).long()
+    # y = x.new_tensor([1] * x.shape[0]).long()
+    print(net(x, t).shape)
+    # print(net(x, t, y).shape)
