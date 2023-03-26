@@ -66,18 +66,26 @@ class Up(nn.Module):
         return x + emb
 
 class SelfAttention(nn.Module):
-    def __init__(self, ) -> None:
-        super().__init__()
+    def __init__(self, channels, size) -> None:
+        super(SelfAttention, self).__init__()
+        self.channels = channels
+        self.size = size
+        self.mha = nn.MultiheadAttention(embed_dim=channels, num_heads=4, batch_first=True)
+        self.ln = nn.LayerNorm([channels])
+        self.ff_self = nn.Sequential(
+            nn.LayerNorm([channels]),
+            nn.Linear(channels, channels),
+            nn.GELU(),
+            nn.Linear(channels, channels),
+        )
 
-    def forward(self,):
-        pass
-
-class OutConv(nn.Module):
-    def __init__(self, ) -> None:
-        super().__init__()
-
-    def forward(self,):
-        pass
+    def forward(self, x):
+        x = x.view(-1, self.channels, self.size*self.size).swapaxes(1, 2)
+        x_ln = self.ln(x)
+        attention_value, _ = self.mha(x_ln, x_ln, x_ln)
+        attention_value = attention_value + x
+        attention_value = self.ff_self(attention_value) + attention_value
+        return attention_value.swapaxes(2, 1).view(-1, self.channels, self.size, self.size)
 
 class UNet(nn.Module):
 
@@ -103,7 +111,7 @@ class UNet(nn.Module):
         self.sa5 = SelfAttention(64, 32)
         self.up3 = Up(128, 64)
         self.sa6 = SelfAttention(64, 64)
-        self.outc = OutConv(64, c_out, kernel_size=1)
+        self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1. / (10000 ** (torch.arange(0, channels, 2, device=self.device).float() / channels))
