@@ -1,5 +1,56 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+class DoubleConv(nn.Module):
+    def __init__(self, in_channel, out_channel, mid_channel, residual):
+        super().__init__()
+        self.residual = residual
+        if not mid_channel:
+            mid_channel = out_channel
+
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channel, mid_channel, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(1, mid_channel),
+            nn.GELU(),
+            nn.Conv2d(mid_channel, out_channel, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(1, out_channel),
+        )
+
+
+    def forward(self, x):
+        if self.residual:
+            return F.gelu(x + self.double_conv(x))
+        else:
+            return self.double_conv(x)
+
+class Down(nn.Module):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def forward(self,):
+        pass
+
+class SelfAttention(nn.Module):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def forward(self,):
+        pass
+
+class Up(nn.Module):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def forward(self,):
+        pass
+
+class OutConv(nn.Module):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def forward(self,):
+        pass
 
 class UNet(nn.Module):
 
