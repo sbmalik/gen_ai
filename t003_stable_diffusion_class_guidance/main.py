@@ -46,7 +46,7 @@ def main():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     args.epochs = 300
-    args.batch_size = 8
+    args.batch_size = 6
     args.image_size = 64
     args.dataset_path = os.path.join(os.path.dirname(__file__), '../datasets/flowers')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
