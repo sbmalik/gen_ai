@@ -31,12 +31,14 @@ def train(args):
 
             pbar.set_postfix(MSE=loss.item())
         
-        sampled_images = diffusion.sample(model, n=images.shape[0])
-        save_images(sampled_images, 
-                    os.path.join(os.path.dirname(__file__), f"../logdir/results/{epoch}.jpg"),
+        if i % 20 == 0:
+            sampled_images = diffusion.sample(model, n=images.shape[0])
+            save_images(sampled_images, 
+                        os.path.join(os.path.dirname(__file__), f"../logdir/results/{epoch}.jpg"),
+                       )
+            torch.save(model.state_dict(), 
+                    os.path.join(os.path.dirname(__file__), f"../logdir/results/{epoch}.pt"),
                     )
-        torch.save(model.state_dict(), 
-                   os.path.join(os.path.dirname(__file__), f"../logdir/results/{epoch}.pt"),)
 
 
 def main():
