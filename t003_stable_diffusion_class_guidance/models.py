@@ -25,29 +25,41 @@ class DoubleConv(nn.Module):
             return self.double_conv(x)
 
 class Down(nn.Module):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, in_channels, out_channels, emb_dims=256) -> None:
+        super().__init__()
+        self.max_pool = nn.Sequential(
+            nn.MaxPool2d(2),
+            DoubleConv(in_channels, in_channels, residual=True),
+            DoubleConv(out_channels, out_channels),
+        )
 
-    def forward(self,):
-        pass
+        self.emb_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(emb_dims, out_channels),
+        )
+
+    def forward(self, x, t):
+        x = self.max_pool(x)
+        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        return x + emb
 
 class SelfAttention(nn.Module):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, ) -> None:
+        super().__init__()
 
     def forward(self,):
         pass
 
 class Up(nn.Module):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, ) -> None:
+        super().__init__()
 
     def forward(self,):
         pass
 
 class OutConv(nn.Module):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, ) -> None:
+        super().__init__()
 
     def forward(self,):
         pass
