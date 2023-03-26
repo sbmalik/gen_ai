@@ -18,6 +18,7 @@ def train(args):
 
     for epoch in range(args.epochs):
         pbar = tqdm(dataloader)
+        pbar.set_description(f"Train :: Epoch: {epoch}/{args.epochs}")
         for i, (images, _) in enumerate(pbar):
             images = images.to(device)
             t = diffusion.sample_timesteps(images.shape[0]).to(device)
@@ -31,7 +32,7 @@ def train(args):
 
             pbar.set_postfix(MSE=loss.item())
         
-        if i % 20 == 0:
+        if epoch % 20 == 0:
             sampled_images = diffusion.sample(model, n=images.shape[0])
             save_images(sampled_images, 
                         os.path.join(os.path.dirname(__file__), f"../logdir/results/{epoch}.jpg"),
@@ -44,8 +45,8 @@ def train(args):
 def main():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
-    args.epochs = 500
-    args.batch_size = 4
+    args.epochs = 300
+    args.batch_size = 8
     args.image_size = 64
     args.dataset_path = os.path.join(os.path.dirname(__file__), '../datasets/flowers')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
