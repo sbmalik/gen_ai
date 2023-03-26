@@ -43,14 +43,29 @@ class Down(nn.Module):
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + emb
 
-class SelfAttention(nn.Module):
-    def __init__(self, ) -> None:
-        super().__init__()
-
-    def forward(self,):
-        pass
-
 class Up(nn.Module):
+    def __init__(self, in_channel, out_channel, emb_dim=256) -> None:
+        super().__init__()
+        self.up = nn.Upsample(
+            scale_factor=2, mode="bilinear", align_corners=True
+        )
+        self.conv = nn.Sequential(
+            DoubleConv(in_channel, in_channel, residual=True),
+            DoubleConv(in_channel, out_channel, in_channel // 2),
+        )
+        self.emb_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(emb_dim, out_channel),
+        )
+
+    def forward(self, x, x_skip, t):
+        x = self.up(x)
+        x = torch.cat([x_skip, x], dim=1)
+        x = self.conv(x)
+        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        return x + emb
+
+class SelfAttention(nn.Module):
     def __init__(self, ) -> None:
         super().__init__()
 
