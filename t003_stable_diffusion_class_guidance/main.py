@@ -53,5 +53,26 @@ def main():
     args.lr = 3e-4
     train(args)
 
+def infer(args):
+    device = args.device
+    model = UNet(device="cpu").to(device)
+    model.load_state_dict(torch.load(args.model_path))
+    diffusion = Diffusion(img_size=args.image_size,
+                           device=device)
+    sampled_images = diffusion.sample(model, n=args.num_images)
+    save_images(sampled_images, args.save_path)
+
+def main_infer():
+    parser = argparse.ArgumentParser()
+    args = parser.parse_args()
+    args.num_images = 32
+    args.image_size = 64
+    # args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    args.device = 'cpu'
+    args.model_path = os.path.join(os.path.dirname(__file__), '../logdir/results/280.pt')
+    args.save_path = os.path.join(os.path.dirname(__file__), '../logdir/results/infer.jpg')
+    infer(args)
+
 if __name__ == '__main__':
-    main()
+    # main()
+    main_infer()
