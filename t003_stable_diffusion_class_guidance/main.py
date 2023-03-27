@@ -2,9 +2,10 @@ import argparse
 import os
 import torch
 from utils import *
-from model import UNet
+from model import UNet, UNetConditional
 from ddfm import Diffusion
 from tqdm import tqdm
+import numpy as np
 
 def train(args):
     device = args.device
@@ -41,6 +42,50 @@ def train(args):
                     os.path.join(os.path.dirname(__file__), f"../logdir/results/{epoch}.pt"),
                     )
 
+def train_conditional(args):
+    device = args.device
+    dataloader = get_data(args)
+    model = UNetConditional(num_classes=args.num_classes).to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    mse = torch.nn.MSELoss()
+    diffusion = Diffusion(img_size=args.image_size,
+                           device=device)
+    l = len(dataloader)
+
+    for epoch in range(args.epochs):
+        pbar = tqdm(dataloader)
+        pbar.set_description(f"Train :: Epoch: {epoch}/{args.epochs}")
+        for i, (images, labels) in enumerate(pbar):
+            
+            images = images.to(device)
+            labels = labels.to(device)
+
+            t = diffusion.sample_timesteps(images.shape[0]).to(device)
+            x_t, noise = diffusion.noise_images(images, t)
+
+            if np.random.random() < 0.1:
+                labels = None
+
+            predicted_noise = model(x_t, t, labels)
+            loss = mse(predicted_noise, noise)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            pbar.set_postfix(MSE=loss.item())
+        
+        if epoch % 20 == 0:
+            labels = torch.arange(5).long().to(device)
+            # n = images.shape[0]
+            sampled_images = diffusion.sample(model, n=len(labels), labels=labels)
+            save_images(sampled_images, 
+                    os.path.join(os.path.dirname(__file__), f"../logdir/results_cfg/{epoch}.jpg"),
+                    )
+            torch.save(model.state_dict(), 
+                    os.path.join(os.path.dirname(__file__), f"../logdir/results_cfg/{epoch}.pt"),
+                    )
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -48,10 +93,12 @@ def main():
     args.epochs = 300
     args.batch_size = 6
     args.image_size = 64
+    args.num_classes = 5
     args.dataset_path = os.path.join(os.path.dirname(__file__), '../datasets/flowers')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.lr = 3e-4
-    train(args)
+    # train(args)
+    train_conditional(args)
 
 def infer(args):
     device = args.device
@@ -74,5 +121,5 @@ def main_infer():
     infer(args)
 
 if __name__ == '__main__':
-    # main()
-    main_infer()
+    main()
+    # main_infer()

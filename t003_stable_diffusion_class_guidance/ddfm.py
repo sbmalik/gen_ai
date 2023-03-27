@@ -31,14 +31,18 @@ class Diffusion:
     def sample_timesteps(self, n):
         return torch.randint(low=1, high=self.noise_step, size=(n,))
     
-    def sample(self, model, n,):
+    def sample(self, model, n, labels, cfg_scale=3):
         print("Sampling...")
         model.eval()
         with torch.no_grad():
             x = torch.randn((n, 3, self.img_size, self.img_size)).to(self.device)
             for i in tqdm(reversed(range(1, self.noise_step)), position=0):
                 t = (torch.ones(n) * i).long().to(self.device)
-                predicted_noise = model(x, t)
+                predicted_noise = model(x, t, labels)
+
+                if cfg_scale > 0:
+                    un_conditioned_noise = model(x, t, None)
+                    predicted_noise = torch.lerp(un_conditioned_noise, predicted_noise, cfg_scale)
 
                 alpha = self.alpha[t][:, None, None, None]
                 alpha_hat = self.alpha_hat[t][:, None, None, None]
