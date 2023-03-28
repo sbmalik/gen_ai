@@ -2,6 +2,37 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class EMA:
+
+    def __init__(self, beta) -> None:
+        super().__init__()
+        self.beta = beta
+        self.step = 0
+
+    def reset_parameters(self, ema_model, model):
+        ema_model.load_state_dict(model.state_dict())
+
+    def update_average(self, old, new):
+        if old is None:
+            return new
+        return old * self.beta + new * (1 - self.beta)
+    
+    def update_model_average(self, ma_model, current_model):
+        for c_params, o_params in zip(current_model.parameters(), ma_model.parameters()):
+            old_weights, new_weights = o_params.data, c_params.data
+            o_params.data = self.update_average(old_weights, new_weights)
+
+    def step_ema(self, ema_model, model, step_start_ema=2000):
+        if self.step < step_start_ema:
+            self.reset_parameters(ema_model, model)
+            self.step += 1
+            return
+        self.update_model_average(ema_model, model)
+        self.step += 1
+
+
+
+
 class DoubleConv(nn.Module):
     def __init__(self, in_channel, out_channel, mid_channel=None, residual=False):
         super().__init__()

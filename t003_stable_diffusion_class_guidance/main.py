@@ -2,10 +2,11 @@ import argparse
 import os
 import torch
 from utils import *
-from model import UNet, UNetConditional
+from model import UNet, UNetConditional, EMA
 from ddfm import Diffusion
 from tqdm import tqdm
 import numpy as np
+import copy
 
 def train(args):
     device = args.device
@@ -52,6 +53,9 @@ def train_conditional(args):
                            device=device)
     l = len(dataloader)
 
+    ema = EMA(beta=0.995)
+    ema_model = copy.deepcopy(model).eval().requires_grad_(False)
+
     for epoch in range(args.epochs):
         pbar = tqdm(dataloader)
         pbar.set_description(f"Train :: Epoch: {epoch}/{args.epochs}")
@@ -73,24 +77,33 @@ def train_conditional(args):
             loss.backward()
             optimizer.step()
 
+            ema.step_ema(model, ema_model)
+
             pbar.set_postfix(MSE=loss.item())
         
         if epoch % 20 == 0:
             labels = torch.arange(5).long().to(device)
             # n = images.shape[0]
             sampled_images = diffusion.sample(model, n=len(labels), labels=labels)
+            ema_sampled_images = diffusion.sample(ema_model, n=len(labels), labels=labels)
             save_images(sampled_images, 
                     os.path.join(os.path.dirname(__file__), f"../logdir/results_cfg/{epoch}.jpg"),
                     )
             torch.save(model.state_dict(), 
                     os.path.join(os.path.dirname(__file__), f"../logdir/results_cfg/{epoch}.pt"),
                     )
+            save_images(ema_sampled_images, 
+                    os.path.join(os.path.dirname(__file__), f"../logdir/results_cfg/{epoch}_ema.jpg"),
+                    )
+            torch.save(ema_model.state_dict(), 
+                    os.path.join(os.path.dirname(__file__), f"../logdir/results_cfg/{epoch}_ema.pt"),
+                    )
 
 
 def main():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
-    args.epochs = 300
+    args.epochs = 301
     args.batch_size = 6
     args.image_size = 64
     args.num_classes = 5
